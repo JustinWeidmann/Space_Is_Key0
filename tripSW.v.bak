@@ -1,0 +1,10 @@
+module tripSW(
+	input logic tpOn,
+	input logic tpOff,
+	
+	output logic trip
+);
+
+
+
+endmodule

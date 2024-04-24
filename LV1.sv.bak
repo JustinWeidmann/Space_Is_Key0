@@ -1,0 +1,87 @@
+module LV1
+  #(
+    parameter int pA = 12,
+    parameter int cA = 4 
+    )
+    (
+     input  logic [pA-1:0] pix_x,
+     input  logic [pA-1:0] pix_y,
+     input  logic          pix_v,
+
+     input logic imgReturn,
+
+     input  logic clk,
+     input  logic rst,
+
+     output logic LVcp;
+     output logic [cA-1:0] color[2:0]
+     );
+
+    logic right, left;
+    logic [1:0] subLV;
+    logic playerRst;
+
+    logic [11:0] setStartX, setStartY;
+
+    logic [cA-1:0] theFloorC [2:0];
+
+    assign color[0] = theFloorC[0];
+    assign color[1] = theFloorC[1];
+    assign color[2] = theFloorC[2];
+
+    setCounter #(12, 640) moveX(.clk, .rst(playerRst), .inc(right && imgReturn), .dec(left && imgReturn), .cnt(playerX), .setValue(setStartX)); //(300,220) is center for 20x20 cube
+	setCounter #(12, 480) moveY(.clk, .rst(playerRst), .inc(up && imgReturn), .dec(down && imgReturn), .cnt(playerY), .setValue(setStartY)); //140
+
+    always_comb begin
+        unique case(1'b1)
+            (playerX==12'd620)&&(subLV==2'd0): begin
+                subLV = subLV+1;    // Might be true 60x per sec
+                playerRst = 1;
+            end
+            (playerX=='0)&&(subLV==2'd1): begin
+                subLV = subLV+1;    // Might be true 60x per sec
+                playerRst = 1;
+            end
+            (playerX==12'd620)&&(subLV==2'd2): LVcp = 1;    // End LV
+        endcase
+    end
+
+    always_comb begin
+        unique case(subLV)
+            2'd0: begin
+                right = 1;
+                left = 0;
+                setStartX = '0;
+                setStartY = 12'd140;
+            end
+            2'd1: begin
+                right = 0;
+                left = 1;
+                setStartX = 12'd620;
+                setStartY = 12'd300;
+            end
+            2'd2: begin
+                right = 1;
+                left = 0;
+                setStartX = '0;
+                setStartY = 12'd460;
+            end
+        endcase
+    end
+
+    box #(pA, cA) player(
+		.pix_y, .pix_x, .pix_v,
+		.width(12'd20), .hight(12'd20),
+		.Xcord(playerX), .Ycord(playerY),
+        .boxColor(12'hc39), // Should be Purple
+		.color(playerC),
+		.clk,
+		.rst);
+
+    theFloor #(pA, cA) theFloor0(
+        .pix_y, .pix_x, .pix_v,
+        .color(theFloorC)
+    );
+
+
+endmodule
